@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Tenant Document Storage</title>
+  <style>
+      :root {
+          --background-color: #1a1a1a;
+          --card-color: #2a2a2a;
+          --text-color: #e1e1e1;
+          --primary-color: #5ea5f8;
+          --danger-color: #f87171;
+          --border-color: #444;
+          --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+      body {
+          font-family: var(--font-family);
+          background-color: var(--background-color);
+          color: var(--text-color);
+          margin: 0;
+          padding: 2rem;
+          display: flex;
+          justify-content: center;
+      }
+      .container {
+          width: 100%;
+          max-width: 800px;
+      }
+      h1, h2 {
+          color: var(--primary-color);
+          text-align: center;
+      }
+      .card {
+          background-color: var(--card-color);
+          border-radius: 8px;
+          padding: 1.5rem;
+          margin-bottom: 1.5rem;
+          border: 1px solid var(--border-color);
+      }
+      .form-group {
+          margin-bottom: 1rem;
+      }
+      label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: bold;
+      }
+      select, input[type="text"], input[type="file"], button {
+          width: 100%;
+          padding: 0.75rem;
+          border-radius: 4px;
+          border: 1px solid var(--border-color);
+          background-color: #333;
+          color: var(--text-color);
+          font-size: 1rem;
+          box-sizing: border-box;
+      }
+      button {
+          background-color: var(--primary-color);
+          color: #1a1a1a;
+          font-weight: bold;
+          cursor: pointer;
+          transition: opacity 0.2s;
+      }
+      button:hover {
+          opacity: 0.8;
+      }
+      button.danger {
+          background-color: var(--danger-color);
+      }
+      #document-list {
+          list-style-type: none;
+          padding: 0;
+          margin: 0;
+      }
+      .doc-item {
+          background-color: #333;
+          padding: 1rem;
+          border-radius: 4px;
+          margin-bottom: 1rem;
+          border-left: 4px solid var(--primary-color);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+      }
+      .doc-item-info { flex-grow: 1; }
+      .doc-item-actions { display: flex; gap: 0.5rem; margin-left: 1rem; }
+      .doc-item-actions button { width: auto; padding: 0.5rem 1rem; font-size: 0.9rem;}
+      .doc-item p { margin: 0 0 0.5rem 0; }
+      .doc-item .meta {
+          font-size: 0.8rem;
+          color: #999;
+      }
+      #status-message {
+          padding: 1rem;
+          border-radius: 4px;
+          margin-top: 1rem;
+          text-align: center;
+          display: none;
+      }
+      #status-message.success {
+          background-color: #2f5d3d;
+          color: #a7f3d0;
+      }
+      #status-message.error {
+          background-color: #7f1d1d;
+          color: #fecaca;
+      }
+      #main-content { display: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Multi-Tenant Document Storage</h1>
+
+  <div class="card" id="auth-card">
+    <h2>Authentication</h2>
+    <div class="form-group">
+      <label for="auth-token-select">Select User Token</label>
+      <select id="auth-token-select">
+        <option value="" disabled selected>-- Select a user --</option>
+        <option value="token_admin_a">Admin (Company A)</option>
+        <option value="token_user_a">User (Company A)</option>
+        <option value="token_admin_b">Admin (Company B)</option>
+      </select>
+    </div>
+    <button id="login-button">Login</button>
+  </div>
+
+  <div id="main-content">
+    <div class="card">
+      <h2>Welcome, <span id="user-info"></span>! <button id="logout-button" style="width: auto; float: right;">Logout</button></h2>
+    </div>
+
+    <div class="card">
+      <h2>Upload New Document</h2>
+      <form id="upload-form">
+        <div class="form-group">
+          <label for="file-input">Document File</label>
+          <input type="file" id="file-input" required>
+        </div>
+        <div class="form-group">
+          <label for="access-level">Access Level</label>
+          <select id="access-level">
+            <option value="private">Private (only you and admins)</option>
+            <option value="tenant">Tenant (everyone in your company)</option>
+          </select>
+        </div>
+        <button type="submit">Upload Document</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>My Documents</h2>
+      <ul id="document-list">
+      </ul>
+    </div>
+  </div>
+
+  <div id="status-message"></div>
+
+</div>
+
+<script>
+  // DOM Elements
+  const authTokenSelect = document.getElementById('auth-token-select');
+  const loginButton = document.getElementById('login-button');
+  const logoutButton = document.getElementById('logout-button');
+  const authCard = document.getElementById('auth-card');
+  const mainContent = document.getElementById('main-content');
+  const userInfoSpan = document.getElementById('user-info');
+  const documentList = document.getElementById('document-list');
+  const uploadForm = document.getElementById('upload-form');
+  const fileInput = document.getElementById('file-input');
+  const accessLevelSelect = document.getElementById('access-level');
+  const statusMessageDiv = document.getElementById('status-message');
+
+  // App State
+  let authToken = null;
+  let currentUser = null;
+
+  const showStatus = (message, type = 'error') => {
+    statusMessageDiv.textContent = message;
+    statusMessageDiv.className = type;
+    statusMessageDiv.style.display = 'block';
+    setTimeout(() => {
+      statusMessageDiv.style.display = 'none';
+    }, 5000);
+  };
+
+  const api = {
+    getHeaders: () => ({
+      'Authorization': `Bearer ${authToken}`
+    }),
+
+    get: async (endpoint) => {
+      const response = await fetch(endpoint, { headers: api.getHeaders() });
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      return response;
+    },
+
+    post: async (endpoint, formData) => {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: api.getHeaders(),
+        body: formData
+      });
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      return response.json();
+    },
+
+    delete: async (endpoint) => {
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: api.getHeaders(),
+      });
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      return response;
+    }
+  };
+
+  const renderDocuments = (docs) => {
+    documentList.innerHTML = '';
+    if (docs.length === 0) {
+      documentList.innerHTML = '<p>No documents found.</p>';
+      return;
+    }
+    docs.forEach(doc => {
+      const item = document.createElement('li');
+      item.className = 'doc-item';
+
+      const deleteButtonHtml = currentUser.role === 'admin'
+        ? `<button class="danger" data-doc-id="${doc.id}">Delete</button>`
+        : '';
+
+      item.innerHTML = `
+                <div class="doc-item-info">
+                    <p><strong>${doc.filename}</strong></p>
+                    <p class="meta">ID: ${doc.id} | Access: ${doc.access_level} | Uploaded by: ${doc.uploaded_by}</p>
+                </div>
+                <div class="doc-item-actions">
+                    <button data-doc-id="${doc.id}" data-filename="${doc.filename}">Download</button>
+                    ${deleteButtonHtml}
+                </div>
+            `;
+      documentList.appendChild(item);
+    });
+  };
+
+  const fetchAndRenderDocuments = async () => {
+    try {
+      const response = await api.get('/documents');
+      const docs = await response.json();
+      renderDocuments(docs);
+    } catch (error) {
+      showStatus(error.message);
+    }
+  };
+
+  const handleLogin = async () => {
+    const token = authTokenSelect.value;
+    if (!token) {
+      showStatus('Please select a user.');
+      return;
+    }
+    authToken = token;
+
+    try {
+      const response = await api.get('/users/me');
+      currentUser = await response.json();
+
+      userInfoSpan.textContent = `${currentUser.id} (Role: ${currentUser.role}, Tenant: ${currentUser.tenant_id})`;
+      authCard.style.display = 'none';
+      mainContent.style.display = 'block';
+
+      await fetchAndRenderDocuments();
+
+    } catch (error) {
+      showStatus('Login failed: Invalid token or server error.');
+      authToken = null;
+      currentUser = null;
+    }
+  };
+
+  const handleLogout = () => {
+    authToken = null;
+    currentUser = null;
+    mainContent.style.display = 'none';
+    authCard.style.display = 'block';
+    authTokenSelect.value = '';
+    documentList.innerHTML = '';
+  };
+
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    const file = fileInput.files[0];
+    const accessLevel = accessLevelSelect.value;
+
+    if (!file) {
+      showStatus('Please select a file to upload.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('access_level', accessLevel);
+
+    try {
+      await api.post('/documents', formData);
+      showStatus('File uploaded successfully!', 'success');
+      uploadForm.reset();
+      await fetchAndRenderDocuments();
+    } catch (error) {
+      showStatus(`Upload failed: ${error.message}`);
+    }
+  };
+
+  const handleDocumentActions = async (e) => {
+    const docId = e.target.dataset.docId;
+    if (!docId) return;
+
+    if (e.target.textContent === 'Download') {
+      const filename = e.target.dataset.filename;
+      try {
+        const response = await api.get(`/documents/${docId}`);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      } catch (error) {
+        showStatus(`Download failed: ${error.message}`);
+      }
+    }
+
+    if (e.target.textContent === 'Delete') {
+      if (!confirm(`Are you sure you want to delete document ${docId}?`)) {
+        return;
+      }
+      try {
+        await api.delete(`/documents/${docId}`);
+        showStatus('Document deleted successfully!', 'success');
+        await fetchAndRenderDocuments();
+      } catch(error) {
+        showStatus(`Deletion failed: ${error.message}`);
+      }
+    }
+  };
+
+  // Event Listeners
+  loginButton.addEventListener('click', handleLogin);
+  logoutButton.addEventListener('click', handleLogout);
+  uploadForm.addEventListener('submit', handleUpload);
+  documentList.addEventListener('click', handleDocumentActions);
+
+</script>
+</body>
+</html>

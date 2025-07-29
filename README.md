@@ -63,7 +63,7 @@ Ensure you have **Bun** installed on your machine. Installation instructions can
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/market-4-test/task-2-docs
+    git clone git@github.com:market-4-test/task-2-docs.git
     cd task-2-docs
     ```
 

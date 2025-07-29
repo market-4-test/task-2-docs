@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Event Feed</title>
+    <style>
+        :root {
+            --background-color: #1a1a1a;
+            --card-color: #2a2a2a;
+            --text-color: #e1e1e1;
+            --primary-color: #4ade80;
+            --border-color: #444;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+        }
+        .card {
+            background-color: var(--card-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        select, input, button {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: #333;
+            color: var(--text-color);
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: var(--primary-color);
+            color: #1a1a1a;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        #event-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .event-item {
+            background-color: #333;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            border-left: 4px solid var(--primary-color);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .event-item.tenant_b {
+            border-left-color: #f9a826;
+        }
+        .event-item p { margin: 0; }
+        .event-item .meta {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 0.5rem;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Real-Time Event Feed</h1>
+
+    <div class="card">
+        <div class="form-group">
+            <label for="tenant-select">Select Tenant</label>
+            <select id="tenant-select">
+                <option value="tenant_a">Tenant A</option>
+                <option value="tenant_b">Tenant B</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="card">
+        <form id="event-form">
+            <div class="form-group">
+                <label for="event-message">New Event Message</label>
+                <input type="text" id="event-message" placeholder="Enter your event message..." required>
+            </div>
+            <button type="submit">Send Event</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Live Events</h2>
+        <ul id="event-list">
+        </ul>
+    </div>
+</div>
+
+<script>
+    const tenantSelect = document.getElementById('tenant-select');
+    const eventForm = document.getElementById('event-form');
+    const eventMessageInput = document.getElementById('event-message');
+    const eventList = document.getElementById('event-list');
+
+    let socket = null;
+    let currentTenant = tenantSelect.value;
+
+    function connectWebSocket() {
+        // Close existing connection if any
+        if (socket) {
+            socket.close();
+        }
+
+        currentTenant = tenantSelect.value;
+        // Requirement: Connect to WebSocket with tenantId as a query parameter
+        const wsUrl = `ws://${window.location.host}/ws?tenantId=${currentTenant}`;
+        socket = new WebSocket(wsUrl);
+
+        socket.onopen = () => {
+            console.log(`WebSocket connected for ${currentTenant}`);
+            eventList.innerHTML = ''; // Clear list on new connection
+        };
+
+        socket.onmessage = (event) => {
+            const eventData = JSON.parse(event.data);
+            console.log('Received event:', eventData);
+
+            // Requirement: Clear visual indication when events arrive
+            const newItem = document.createElement('li');
+            newItem.classList.add('event-item');
+            // Optional: Add a class for tenant-specific styling
+            if (eventData.tenant_id === 'tenant_b') {
+                newItem.classList.add('tenant_b');
+            }
+
+            newItem.innerHTML = `
+                    <p>${eventData.message}</p>
+                    <p class="meta">ID: ${eventData.id} | Timestamp: ${new Date(eventData.timestamp).toLocaleTimeString()}</p>
+                `;
+            eventList.prepend(newItem); // Add new events to the top
+        };
+
+        socket.onerror = (error) => {
+            console.error('WebSocket Error:', error);
+        };
+
+        socket.onclose = () => {
+            console.log('WebSocket disconnected');
+        };
+    }
+
+    // Handle tenant selection change
+    tenantSelect.addEventListener('change', connectWebSocket);
+
+    // Handle form submission to send a new event
+    eventForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const message = eventMessageInput.value;
+        if (!message || !currentTenant) return;
+
+        // Requirement: Send events via POST /events with a tenant header
+        await fetch('/events', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-tenant-id': currentTenant
+            },
+            body: JSON.stringify({ message: message })
+        });
+
+        eventMessageInput.value = ''; // Clear input after sending
+    });
+
+    // Initial connection
+    connectWebSocket();
+</script>
+</body>
+</html>

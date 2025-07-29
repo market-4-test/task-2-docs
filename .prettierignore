@@ -1,0 +1,8 @@
+# Bun
+bun.lockb
+
+# Dependencies
+node_modules
+
+# Build output
+dist

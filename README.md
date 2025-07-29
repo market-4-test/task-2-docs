@@ -1,21 +1,19 @@
-# Real-Time Multi-Tenant Event Feed (Task 1)
+# Real-Time Multi-Tenant Event & Document System
 
-This project is an implementation of **Task 1: Real-Time Multi-Tenant Event Feed** from the technical assignment. It
-consists of a backend service and a simple frontend client to demonstrate real-time event broadcasting with full data
-isolation between different tenants.
+This project is an implementation of **Task 1: Real-Time Multi-Tenant Event Feed** and **Task 2: Multi-Tenant Document API** from the technical assignment. It consists of a backend service and simple frontend clients to demonstrate real-time features and secure, multi-tenant document management.
 
 ## ✨ Features
 
-- **Real-Time Broadcasting**: Uses **WebSockets** for instant event delivery to clients.
-- **Strict Tenant Isolation**: The architecture ensures that users of one tenant will never see events from another.
-- **REST API for Event Submission**: Events are sent to the server via the `POST /events` endpoint.
-- **Tenant-Based Authentication**: Tenant identification is handled via the `x-tenant-id` HTTP header for REST requests
-  and the `tenantId` query parameter for WebSocket connections.
-- **In-Memory Storage**: The project requires no database and stores all events in-memory as per the assignment
-  requirements.
-- **Code Quality**: **ESLint** and **Prettier** are integrated to maintain a consistent code style and catch errors.
-- **Interactive Web Client**: Comes with a simple HTML page for testing and demonstrating the functionality in
-  real-time.
+- **Real-Time Broadcasting**: Uses **WebSockets** for instant event delivery to clients. [cite: 68]
+- **Secure Document Management**: Full CRUD functionality for documents with role-based access control (RBAC) and strict tenant isolation.
+- **Strict Tenant Isolation**: The architecture ensures that users of one tenant will never see data (events or documents) from another. [cite: 83, 120]
+- **REST & WebSocket APIs**: Endpoints for both event submission and comprehensive document management.
+- **Token-Based Authentication**: Secure access to document endpoints using Bearer tokens. [cite: 102]
+- **Role-Based Access Control (RBAC)**: Clear distinction between `admin` and `user` roles, where admins have elevated privileges like document deletion. [cite: 103, 121]
+- **Secure File Storage**: Uploaded files are stored on the filesystem with unique UUID-based names to prevent conflicts and path traversal vulnerabilities.
+- **In-Memory Storage**: The project requires no database for simplicity, storing all metadata in-memory. [cite: 86]
+- **Code Quality**: **ESLint** and **Prettier** are integrated to maintain a consistent code style.
+- **Interactive Web Clients**: Comes with two separate HTML pages for testing and demonstrating all functionalities in real-time.
 
 ## 🛠️ Tech Stack
 
@@ -31,144 +29,113 @@ The project has a well-defined structure to separate concerns.
 
 ```
 .
-├── dist/                     # Directory for compiled files (created after build)
+├── dist/
 ├── public/
-│   └── index.html            # Frontend client
+│   ├── index.html            # Frontend client for Task 1 (Events)
+│   └── docs.html             # Frontend client for Task 2 (Documents)
 ├── src/
 │   ├── config/
-│   │   └── config.ts         # Class for handling configuration (.env)
+│   │   └── config.ts
 │   ├── factories/
-│   │   └── logger.factory.ts # Factory for creating the logger
+│   │   └── logger.factory.ts
 │   ├── services/
-│   │   └── event.service.ts  # Business logic (storage, event creation)
+│   │   ├── event.service.ts    # Business logic for events
+│   │   └── document.service.ts # Business logic for documents
 │   ├── server/
-│   │   └── server.ts         # Elysia server logic (routes, WebSocket)
-│   ├── types.ts              # Global types and interfaces (IEvent)
-│   └── main.ts               # Main application entry point
-├── .env                      # Local environment variables (not in repository)
-├── .env.example              # Example .env file
-├── eslint.config.js          # ESLint v9+ configuration
-├── package.json              # Dependencies and scripts
-└── README.md                 # This documentation
+│   │   └── server.ts           # Elysia server (routes, WebSocket, auth)
+│   ├── types.ts                # Global types and interfaces
+│   └── main.ts                 # Main application entry point
+├── uploads/                    # Directory for uploaded files (gitignored)
+├── .env
+├── .env.example
+├── package.json
+└── README.md
 ```
 
 ## 🚀 Installation & Setup
 
 ### Prerequisites
 
-Ensure you have **Bun** installed on your machine. Installation instructions can be found on
-the [official website](https://bun.sh/docs/installation).
+Ensure you have **Bun** installed on your machine. Installation instructions can be found on the [official website](https://bun.sh/docs/installation).
 
 ### Step-by-Step Installation
 
-1. **Clone the repository:**
+1.  **Clone the repository:**
 
-   ```bash
-   git clone <your-repository-url>
-   cd next-basket-task-1
-   ```
+    ```bash
+    git clone https://github.com/market-4-test/task-2-docs
+    cd task-2-docs
+    ```
 
-2. **Install dependencies:**
+2.  **Install dependencies:**
 
-   ```bash
-   bun install
-   ```
+    ```bash
+    bun install
+    ```
 
-3. **Set up environment variables:**
-   Create a `.env` file in the project root by copying `.env.example`.
+3.  **Set up environment variables:**
+    Create a `.env` file in the project root by copying `.env.example`.
 
-   ```bash
-   cp .env.example .env
-   ```
+    ```bash
+    cp .env.example .env
+    ```
 
-   The `.env` file contains the following variables:
-
-    - `PORT`: The port on which the server will run.
-    - `HOSTNAME`: The host on which the server will run.
-    - `LOG_LEVEL`: The logging level (e.g., `info`, `warn`, `error`).
+    The `.env` file contains server and logging configuration.
 
 ### Available Scripts
 
-The project is configured with the following scripts:
-
-- **Run in development mode:**
-
-  ```bash
-  bun run dev
-  ```
-
-- **Build for Production:**
-  *This command will compile the TypeScript, optimize the code, and copy the `public` assets to the `dist` folder.*
-
-  ```bash
-  bun run build
-  ```
-
-- **Run the Production version:**
-  *Runs the compiled application from the `dist` folder.*
-
-  ```bash
-  bun run start
-  ```
-
-- **Check the code (linting):**
-  *Checks the entire codebase against ESLint rules.*
-
-  ```bash
-  bun run lint
-  ```
-
-- **Automatically fix linting errors:**
-
-  ```bash
-  bun run lint:fix
-  ```
-
-- **Format the code:**
-  *Formats the entire codebase using Prettier.*
-
-  ```bash
-  bun run format
-  ```
+- Run in development mode: `bun run dev`
+- Build for Production: `bun run build`
+- Run the Production version: `bun run start`
+- Check & fix code style: `bun run lint:fix` and `bun run format`
 
 ## 🧪 How to Test
 
-The key success criterion is strict tenant isolation. Here is how to verify it:
+### Task 1: Real-Time Event Feed
 
-1. Run the application in development mode: `bun run dev`.
-2. Open a browser and navigate to `http://localhost:3001` (or the port specified in your `.env` file).
-3. Open a second browser window in incognito mode (or a different browser) and navigate to the same address.
-4. In the **first window**, select **Tenant A** from the dropdown menu.
-5. In the **second window**, select **Tenant B**.
-6. In the **Tenant A** window, enter a message in the "New Event Message" form and click "Send Event".
-7. **Result**: The event should appear **only in Tenant A's event list**. Nothing should change in the Tenant B window.
-8. Do the same for **Tenant B** and verify that its events are only visible to it.
+1.  Run the application: `bun run dev`.
+2.  Open a browser and navigate to `http://localhost:3001`.
+3.  Open a second browser window (e.g., in incognito mode) and navigate to the same address.
+4.  In the **first window**, select **Tenant A**. In the **second**, select **Tenant B**.
+5.  Send an event from the Tenant A window and verify it appears **only** in that window. [cite: 89, 90]
+
+### Task 2: Document Management API
+
+1.  Run the application: `bun run dev`.
+2.  Open a browser and navigate to `http://localhost:3001/docs`.
+3.  **Authentication**: Use the dropdown to select a user to log in.
+    - `Admin (Company A)` (Token: `token_admin_a`)
+    - `User (Company A)` (Token: `token_user_a`)
+    - `Admin (Company B)` (Token: `token_admin_b`)
+4.  **Upload**: As any user, upload a file. Test both `private` and `tenant` access levels.
+5.  **Tenant Isolation**: Log in as `Admin (Company B)` and verify you cannot see documents from `Company A`. [cite: 133]
+6.  **RBAC**:
+    - Log in as `User (Company A)` and upload a private file.
+    - Log in as `Admin (Company A)` and verify you can see and delete the file uploaded by `User (Company A)`.
+    - Log back in as `User (Company A)` and verify you **cannot** see a delete button. [cite: 134]
 
 ## 🔌 API Endpoints
 
-- **`GET /`**
+### Event API
 
-    - **Description**: Serves the frontend application (`index.html`).
-    - **Response**: `text/html`
+- **`GET /`**: Serves the event feed frontend (`index.html`).
+- **`POST /events`**: Accepts and broadcasts a new event.
+    - **Header**: `x-tenant-id` (e.g., `tenant_a`) required.
+- **`WS /ws`**: Establishes a WebSocket connection.
+    - **Query Param**: `tenantId` (e.g., `tenant_a`) required.
 
-- **`POST /events`**
+### User & Document API
 
-    - **Description**: Accepts and broadcasts a new event.
-    - **Headers**:
-        - `x-tenant-id` (required): `string` (e.g., `tenant_a`)
-    - **Request Body** (`application/json`):
-      ```json
-      {
-        "message": "My new event message"
-      }
-      ```
-    - **Response**: `IEvent`
+Authentication is required for all document and user endpoints via `Authorization: Bearer <token>`.
 
-- **`WS /ws`**
+- **`GET /users/me`**: Returns information about the currently authenticated user.
 
-    - **Description**: Establishes a WebSocket connection to receive events.
-    - **URL**: `ws://localhost:3001/ws?tenantId=<tenant_id>`
-    - **Query Parameters**:
-        - `tenantId` (required): `string` (e.g., `tenant_a`)
-    - **Server Messages**: The server will send JSON strings in the `IEvent` format when new events occur for the given
-      tenant.
+- **`GET /documents`**: Lists all documents accessible to the user, respecting tenant and RBAC rules. [cite: 98]
+
+- **`POST /documents`**: Uploads a new document. [cite: 97]
+
+    - **Body**: `multipart/form-data` with fields `file` and `access_level` (`private` or `tenant`).
+
+- **`GET /documents/:id`**: Downloads a specific document file if the user has access. [cite: 99]
+
+- **`DELETE /documents/:id`**: Deletes a document's metadata and file. **Admin-only**. [cite: 100]

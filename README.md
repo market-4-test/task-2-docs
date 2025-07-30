@@ -35,14 +35,14 @@ While the current implementation is simple, here is what the architecture for th
 2.  **Document Service (Document API)**:
     * **Storage**: Instead of the local filesystem, a cloud-based S3-compatible storage (e.g., **Amazon S3**, **MinIO**) would be used. This provides durability, versioning, scalability, and security.
     * **Metadata Management**: The relationship between users, documents, and their access rights would be managed in a relational (e.g., **Postgres**) or NoSQL database, allowing for more complex and flexible queries.
+    
+## 🛠️ Tech Stack
 
-## 🛠️ Tech Stack and Why It Was Chosen
-
--   **Runtime**: **Bun**
--   **Web Framework**: **Elysia.js**
--   **Logging**: **Pino**
--   **Linting & Formatting**: ESLint & Prettier
--   **Frontend**: HTML, CSS, JavaScript (Vanilla)
+- **Runtime**: [Bun](https://bun.sh/)
+- **Web Framework**: [Elysia.js](https://elysiajs.com/)
+- **Logging**: [Pino](https://getpino.io/)
+- **Linting & Formatting**: ESLint & Prettier
+- **Frontend**: HTML, CSS, JavaScript (Vanilla)
 
 ### Why Bun and Elysia.js?
 
@@ -53,13 +53,7 @@ Instead of the traditional Node.js + Express stack, **Bun** and **Elysia.js** we
 3.  **All-in-One Tooling**: Bun replaces several tools at once (Node.js, npm/yarn, Webpack/Vite, Jest), which reduces the number of dependencies and simplifies project management.
 4.  **Modern API**: Elysia.js offers an elegant and intuitive API with automatic type generation and validation, which improves code reliability and developer productivity.
 
-## 🛠️ Tech Stack
 
-- **Runtime**: [Bun](https://bun.sh/)
-- **Web Framework**: [Elysia.js](https://elysiajs.com/)
-- **Logging**: [Pino](https://getpino.io/)
-- **Linting & Formatting**: ESLint & Prettier
-- **Frontend**: HTML, CSS, JavaScript (Vanilla)
 
 ## 📁 Project Structure
 

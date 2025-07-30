@@ -17,7 +17,7 @@ This project is an implementation of **Task 1: Real-Time Multi-Tenant Event Feed
 
 ## 🎯 Philosophy and Project Focus (A Note on Implementation)
 
-The primary goal of this project is to demonstrate the **effective use of AI assistants** in the development process, rather than creating a complex, production-ready architecture. [cite_start]In line with the technical assignment's requirements, the emphasis was on how modern tools can be used to accelerate and improve the process of writing code, generating tests, and refactoring. 
+The primary goal of this project is to demonstrate the **effective use of AI assistants** in the development process, rather than creating a complex, production-ready architecture. In line with the technical assignment's requirements, the emphasis was on how modern tools can be used to accelerate and improve the process of writing code, generating tests, and refactoring. 
 
 The implementation is deliberately simplified to focus on fulfilling the key functional requirements outlined in the tasks.
 
